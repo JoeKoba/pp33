@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="layouts/main :: htmlhead"/>
+<body>
+
+<header th:replace="fragments/header :: header"/>
+
+<div class="container-fluid d-flex flex-row vh-100 p-0">
+    <div th:replace="fragments/navbar :: navigation(currentPage='user')"/>
+
+    <div class="flex-grow-1 bg-light p-3">
+        <h1>User information-page</h1>
+        <div class="container-fluid">
+            <div class="row border">
+                <h5 class="m-2">About user</h5>
+            </div>
+            <div class="row border bg-white pb-2">
+                <table class="table table-borderless m-3">
+                    <thead>
+                    <tr class="border-top">
+                        <th scope="col">First name</th>
+                        <th scope="col">Last name</th>
+                        <th scope="col">Age</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="border-top bg-light" th:object="${user}">
+                        <td th:text="*{firstName}"/>
+                        <td th:text="*{lastName}"/>
+                        <td th:text="*{age}"/>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="layouts/main :: footer"/>
+</body>
+</html>
