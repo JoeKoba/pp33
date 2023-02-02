@@ -24,9 +24,7 @@ public class UserController {
     }
 
     @GetMapping("/")
-    public String welcomePage(Model model, HttpSession session,
-                              @SessionAttribute(required = false, name = "Authentication-Name") String authenticationName) {
-        userService.authenticateOrLogout(model, session, authenticationName);
+    public String welcomePage() {
         return "index";
     }
 

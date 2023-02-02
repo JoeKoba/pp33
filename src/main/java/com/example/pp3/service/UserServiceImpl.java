@@ -5,26 +5,26 @@ import com.example.pp3.model.User;
 import com.example.pp3.repository.RoleRepository;
 import com.example.pp3.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.Model;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpSession;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.util.List;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
@@ -45,101 +45,31 @@ public class UserServiceImpl implements UserService {
         return roleRepository.findAll();
     }
 
-    @Override
-    public void authenticateOrLogout(Model model, HttpSession session, String authenticationName) {
-        if (authenticationName != null) {
-            try {
-                model.addAttribute("authenticationName", authenticationName);
-                session.removeAttribute("Authentication-Name");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     @Override
     public List<User> findAllUsers() {
-        return userRepository.findAll(Sort.by(Sort.Direction.ASC, "firstName", "lastName"));
+        return entityManager.createQuery("select u from User u").getResultList();
     }
 
     @Override
     public User findUser(Long userId) throws IllegalArgumentException {
-        return userRepository.findById(userId).orElseThrow(() ->
-                new IllegalArgumentException(String.format("User with ID %d not found", userId)));
-    }
-
-    @Override
-    public void insertUser(User user, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-        if (!bindingResult.hasErrors()) {
-            String oldPassword = user.getPassword();
-            try {
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-                userRepository.save(user);
-            } catch (DataIntegrityViolationException e) {
-                user.setPassword(oldPassword);
-                addErrorIfDataIntegrityViolationException(bindingResult);
-                addRedirectAttributesIfErrorsExists(user, bindingResult, redirectAttributes);
-            }
-        } else {
-            addRedirectAttributesIfErrorsExists(user, bindingResult, redirectAttributes);
-        }
-    }
-
-    @Override
-    public void updateUser(User user, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-        bindingResult = checkBindingResultForPasswordField(bindingResult);
-
-        if (!bindingResult.hasErrors()) {
-            String oldPassword = user.getPassword();
-            try {
-                user.setPassword(user.getPassword().isEmpty() ? // todo если нет такого юзера try
-                        findUser(user.getId()).getPassword() :
-                        passwordEncoder.encode(user.getPassword()));
-                userRepository.save(user);
-            } catch (DataIntegrityViolationException e) {
-                user.setPassword(oldPassword);
-                addErrorIfDataIntegrityViolationException(bindingResult);
-                addRedirectAttributesIfErrorsExists(user, bindingResult, redirectAttributes);
-            }
-        } else {
-            addRedirectAttributesIfErrorsExists(user, bindingResult, redirectAttributes);
-        }
-    }
-
-    private void addErrorIfDataIntegrityViolationException(BindingResult bindingResult) {
-        bindingResult.addError(new FieldError(bindingResult.getObjectName(),
-                "email", "E-mail must be unique"));
-    }
-
-    private void addRedirectAttributesIfErrorsExists(User user, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("user", user);
-        redirectAttributes.addFlashAttribute("bindingResult", bindingResult);
-    }
-
-    /**
-     * Удаляет ошибку, если у существующего User пустое поле password
-     *
-     * @param bindingResult BeanPropertyBindingResult
-     * @return BeanPropertyBindingResult
-     */
-    private BindingResult checkBindingResultForPasswordField(BindingResult bindingResult) {
-        if (!bindingResult.hasFieldErrors()) {
-            return bindingResult;
-        }
-
-        User user = (User) bindingResult.getTarget();
-        BindingResult newBindingResult = new BeanPropertyBindingResult(user, bindingResult.getObjectName());
-        for (FieldError error : bindingResult.getFieldErrors()) {
-            if (!user.isNew() && !error.getField().equals("password")) {
-                newBindingResult.addError(error);
-            }
-        }
-
-        return newBindingResult;
+        return entityManager.find(User.class, userId);
     }
 
     @Override
     public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+        Query q = entityManager.createQuery("delete from User User where id = :id");
+        q.setParameter("id", userId);
+        q.executeUpdate();
+    }
+
+    @Override
+    public void insertUser(User user) {
+        entityManager.persist(user);
+    }
+
+    @Override
+    public void updateUser(User user) {
+        entityManager.merge(user);
     }
 }
