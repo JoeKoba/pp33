@@ -34,7 +34,7 @@ public class User implements UserDetails {
 
     private int age;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(name = "users_roles")
     private Set<Role> roles = new HashSet<>();
 
@@ -157,12 +157,7 @@ public class User implements UserDetails {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return age == user.age && Objects.equals(id, user.id)
-                && Objects.equals(firstName, user.firstName)
-                && Objects.equals(lastName, user.lastName)
-                && Objects.equals(email, user.email)
-                && Objects.equals(password, user.password)
-                && Objects.equals(roles, user.roles);
+        return age == user.age && Objects.equals(id, user.id);
     }
 
     @Override

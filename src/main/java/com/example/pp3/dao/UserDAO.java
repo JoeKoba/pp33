@@ -1,15 +1,12 @@
-package com.example.pp3.service;
+package com.example.pp3.dao;
 
 import com.example.pp3.model.Role;
 import com.example.pp3.model.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
+
 import java.util.List;
+import java.util.Optional;
 
-public interface UserService extends UserDetailsService {
-
-
-
-
+public interface UserDAO {
 
     List<User> findAllUsers();
 
@@ -24,4 +21,5 @@ public interface UserService extends UserDetailsService {
     void updateUser(User user);
 
 
+//    Optional<Object> findByEmail(String email);
 }
